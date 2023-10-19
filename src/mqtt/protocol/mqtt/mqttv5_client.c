@@ -828,6 +828,13 @@ mqtt_recv_cb(void *arg)
 		qos = nni_mqtt_msg_get_publish_qos(msg);
 		conn_param_clone(s->cparam);
 		nng_msg_set_cmd_type(msg, CMD_PUBLISH);
+		nni_mqtt_proto_data *mydata = nni_msg_get_proto_data(msg);
+		if (mydata != NULL && mydata->payload != NULL) {
+			char *result = mydata->payload.publish.payload.buf;
+			if (result != NULL) {
+				log_error("rhack: recv a publish msg: %s\n", result);
+			}
+		}
 		if (2 > qos) {
 			// QoS 0, successful receipt
 			// QoS 1, the transport handled sending a PUBACK
