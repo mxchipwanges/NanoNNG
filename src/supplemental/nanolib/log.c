@@ -294,7 +294,7 @@ log_log(int level, const char *file, int line, const char *func,
 
 	for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
 		log_callback *cb = &L.callbacks[i];
-		if (level <= cb->level) {
+		if (1){//(level <= cb->level) {
 			init_event(&ev, cb->udata, cb->config);
 			va_start(ev.ap, fmt);
 			if (cb->mtx == NULL) {

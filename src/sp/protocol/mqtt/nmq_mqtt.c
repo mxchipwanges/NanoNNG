@@ -237,7 +237,7 @@ nano_pipe_timer_cb(void *arg)
 		return;
 	}
 	qos_backoff = p->ka_refresh * (qos_duration) *1000 -
-	    p->keepalive * qos_backoff * 1000;
+	    p->keepalive * qos_backoff;
 	if (qos_backoff > 0) {
 		nni_println(
 		    "Warning: close pipe & kick client due to KeepAlive "
@@ -679,6 +679,8 @@ nano_pipe_start(void *arg)
 			// set event of old pipe to false and discard it.
 			old->event       = false;
 			old->pipe->cache = false;
+			old->conn_param->clean_start = 1;
+			old->reason_code = NNG_ECONNRESET;
 			nni_id_remove(&s->cached_sessions, clientid_key);
 		}
 	} else {
@@ -803,11 +805,12 @@ nano_pipe_close(void *arg)
 		clientid = (char *) conn_param_get_clientid(p->conn_param);
 	}
 	if (clientid) {
+		log_warn("*********pipe close (cached only) ************\r\n");
 		clientid_key = DJBHashn(clientid, strlen(clientid));
 		nni_id_set(&s->cached_sessions, clientid_key, p);
 		nni_mtx_lock(&p->lk);
 		// set event to false avoid of sending the disconnecting msg
-		p->event                   = false;
+		p->event                   = true;//false;
 		npipe->cache               = true;
 		p->conn_param->clean_start = 1;
 		nni_atomic_swap_bool(&npipe->p_closed, false);
@@ -815,16 +818,18 @@ nano_pipe_close(void *arg)
 			nni_list_remove(&s->recvpipes, p);
 		}
 		nano_nni_lmq_flush(&p->rlmq, false);
-		nni_mtx_unlock(&s->lk);
+		//nni_mtx_unlock(&s->lk);
 		nni_mtx_unlock(&p->lk);
-		return;
 	}
-	close_pipe(p);
+	else {
+		close_pipe(p);
+	}
 
 	// TODO send disconnect msg to client if needed.
 	// depends on MQTT V5 reason code
 	// create disconnect event msg
-	if (p->event) {
+	log_warn("\r\n*****************notify disconnect: p->event %d, p->reason_code %d\r\n***************", p->event, p->reason_code);
+	if (p->event && (NNG_ECONNRESET != p->reason_code)) {
 		msg =
 		    nano_msg_notify_disconnect(p->conn_param, p->reason_code);
 		if (msg == NULL) {
