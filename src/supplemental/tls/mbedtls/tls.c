@@ -633,6 +633,9 @@ nng_tls_engine_init_mbed(void)
 	// Uncomment the following to have noisy debug from mbedTLS.
 	// This may be useful when trying to debug failures.
 	// mbedtls_debug_set_threshold(3);
+#ifdef CONFIG_MXCHIP_DEBUG
+	mbedtls_debug_set_threshold(4);
+#endif
 
 	rv = nng_tls_engine_register(&tls_engine_mbed);
 
