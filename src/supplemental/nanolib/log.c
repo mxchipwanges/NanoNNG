@@ -173,6 +173,13 @@ log_set_level(int level)
 }
 
 int
+log_get_level(void)
+{
+	int level = L.level;
+	return level;
+}
+
+int
 log_add_callback(
     log_func fn, void *udata, int level, void *mtx, conf_log *config)
 {

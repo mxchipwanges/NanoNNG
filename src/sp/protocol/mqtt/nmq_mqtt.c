@@ -686,6 +686,7 @@ session_keeping:
 	clientid_key = DJBHashn(clientid, strlen(clientid));
 	// restore session according to clientid
 
+	log_debug("********* clean_start %d, p->id %d", p->conn_param->clean_start, p->id);
 	if (p->conn_param->clean_start == 0) {
 		old = nni_id_get(&s->cached_sessions, clientid_key);
 		if (old != NULL) {
@@ -701,20 +702,24 @@ session_keeping:
 
 			nni_pipe_id_swap(npipe->p_id, old->pipe->p_id);
 			p->id = nni_pipe_id(npipe);
+			log_debug("********* clean_start=0, old->id %d --> p->id %d", old->id, p->id);
 			// set event to false so that no notification will be
 			// sent
 			p->event = false;
 			// set event of old pipe to false and discard it.
 			old->event       = false;
 			old->pipe->cache = false;
+			old->reason_code = NNG_ECONNRESET;
 			nni_id_remove(&s->cached_sessions, clientid_key);
 		}
 	} else {
 		// clean previous session
 		old = nni_id_get(&s->cached_sessions, clientid_key);
 		if (old != NULL) {
+			log_debug("********* clean_start=1, clean previous pipe_id %d ", old->id);
 			old->event       = true;
 			old->pipe->cache = false;
+			old->reason_code = NNG_ECONNRESET;
 #ifdef NNG_SUPP_SQLITE
 			nni_qos_db_remove_by_pipe(
 			    is_sqlite, old->nano_qos_db, old->pipe->p_id);
@@ -817,9 +822,10 @@ nano_pipe_close(void *arg)
 	char      *clientid     = NULL;
 	uint32_t   clientid_key = 0;
 
-	log_trace(" ############## nano_pipe_close ############## ");
+	log_debug(" ############## nano_pipe_close(id %d) ############## ", p->id);
 	if (npipe->cache == true) {
 		// not first time we trying to close stored session pipe
+		log_debug("********* npipe->cache == true, set p_closed=false, return.");
 		nni_atomic_swap_bool(&npipe->p_closed, false);
 		return;
 	}
@@ -831,28 +837,31 @@ nano_pipe_close(void *arg)
 		clientid = (char *) conn_param_get_clientid(p->conn_param);
 	}
 	if (clientid) {
+		log_debug("********* pipe close (just cached) ************\r\n");
 		clientid_key = DJBHashn(clientid, strlen(clientid));
 		nni_id_set(&s->cached_sessions, clientid_key, p);
 		nni_mtx_lock(&p->lk);
-		// set event to false avoid of sending the disconnecting msg
-		p->event                   = false;
+		// set event to true for sending the disconnecting msg, by mxchip
+		p->event                   = true;
 		npipe->cache               = true;
-		p->conn_param->clean_start = 1;
 		nni_atomic_swap_bool(&npipe->p_closed, false);
 		if (nni_list_active(&s->recvpipes, p)) {
 			nni_list_remove(&s->recvpipes, p);
 		}
 		nano_nni_lmq_flush(&p->rlmq, false);
-		nni_mtx_unlock(&s->lk);
+		//nni_mtx_unlock(&s->lk);
 		nni_mtx_unlock(&p->lk);
-		return;
 	}
-	close_pipe(p);
+	else {
+		log_debug("********* pipe close (do) *********\r\n");
+		close_pipe(p);
+	}
 
 	// TODO send disconnect msg to client if needed.
 	// depends on MQTT V5 reason code
 	// create disconnect event msg
-	if (p->event) {
+	log_debug("********* notify disconnect: p->event %d, p->reason_code %d **********\r\n", p->event, p->reason_code);
+	if (p->event && (p->reason_code != NNG_ECONNRESET)) {
 		msg =
 		    nano_msg_notify_disconnect(p->conn_param, p->reason_code);
 		if (msg == NULL) {
