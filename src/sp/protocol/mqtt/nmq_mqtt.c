@@ -699,6 +699,7 @@ session_keeping:
 			// set event of old pipe to false and discard it.
 			old->event       = false;
 			old->pipe->cache = false;
+			old->reason_code = NNG_ECONNRESET; // add by MXCHIP@20240125 for AO
 			nni_id_remove(&s->cached_sessions, p->pipe->p_id);
 		}
 	} else {
@@ -707,6 +708,7 @@ session_keeping:
 		if (old != NULL) {
 			old->event       = true;
 			old->pipe->cache = false;
+			old->reason_code = NNG_ECONNRESET; // add by MXCHIP@20240125 for AO
 #ifdef NNG_SUPP_SQLITE
 			nni_qos_db_remove_by_pipe(
 			    is_sqlite, old->nano_qos_db, old->pipe->p_id);
@@ -810,6 +812,7 @@ nano_pipe_close(void *arg)
 	nni_msg   *msg;
 	nni_pipe  *npipe        = p->pipe;
 	char      *clientid     = NULL;
+	int       ret = 0; // add by MXCHIP@20240125 for AO
 
 	log_trace(" ############## nano_pipe_close ############## ");
 	if (npipe->cache == true) {
@@ -833,7 +836,7 @@ nano_pipe_close(void *arg)
 			nni_mtx_lock(&p->lk);
 			// set event to false avoid of sending the
 			// disconnecting msg
-			p->event                   = false;
+			p->event                   = true;//false; // modify by MXCHIP@20240125 for AO: need disconnect event when connection disconnected
 			npipe->cache               = true;
 			// set clean start to 1, prevent caching session twice
 			p->conn_param->clean_start = 1;
@@ -842,9 +845,12 @@ nano_pipe_close(void *arg)
 				nni_list_remove(&s->recvpipes, p);
 			}
 			nano_nni_lmq_flush(&p->rlmq, false);
-			nni_mtx_unlock(&s->lk);
 			nni_mtx_unlock(&p->lk);
-			return -1;
+			// nni_mtx_unlock(&s->lk);
+			// return -1;
+			ret = -1; // modify by MXCHIP@20240125 for AO
+			log_debug("********* pipe cloe(cached && notify) **********", npipe->p_id);
+			goto send_disconnect_msg;
 		}
 		// have to stop aio timer first, otherwise we hit null qos_db
 		nni_aio_stop(&p->aio_timer);
@@ -861,15 +867,18 @@ nano_pipe_close(void *arg)
 	}
 	close_pipe(p);
 
+send_disconnect_msg:
 	// TODO send disconnect msg to client if needed.
 	// depends on MQTT V5 reason code
 	// create disconnect event msg
-	if (p->event) {
+	// if (p->event) {
+	log_debug("********* notify disconnect: p->event %d, p->reason_code %d **********\r\n", p->event, p->reason_code);
+	if (p->event && (p->reason_code != NNG_ECONNRESET)) { // modify by MXCHIP@20240125 for AO: no disconnect event when client reconnected
 		msg =
 		    nano_msg_notify_disconnect(p->conn_param, p->reason_code);
 		if (msg == NULL) {
 			nni_mtx_unlock(&s->lk);
-			return 0;
+			return ret; // modify by MXCHIP@20240125 for AO
 		}
 		nni_msg_set_conn_param(msg, p->conn_param);
 		// clone for notification pub
@@ -885,7 +894,7 @@ nano_pipe_close(void *arg)
 			nni_mtx_unlock(&s->lk);
 			nni_aio_set_msg(aio, msg);
 			nni_aio_finish(aio, 0, nni_msg_len(msg));
-			return 0;
+			return ret; // modify by MXCHIP@20240125 for AO
 		} else {
 			// no enough ctx, so cache to waitlmq
 			// free conn param when discard waitlmq
@@ -901,7 +910,7 @@ nano_pipe_close(void *arg)
 		}
 	}
 	nni_mtx_unlock(&s->lk);
-	return 0;
+	return ret; // modify by MXCHIP@20240125 for AO
 }
 
 static void
