@@ -636,11 +636,12 @@ nng_tls_engine_init_mbed(void)
 	// Uncomment the following to have noisy debug from mbedTLS.
 	// This may be useful when trying to debug failures.
 #ifdef CONFIG_MXCHIP_DEBUG
-	log_level = log_get_level();
-	if(log_level > 4) {
-		log_level = 4;
-	}
-	mbedtls_debug_set_threshold(log_level);
+	mbedtls_debug_set_threshold(4);
+	// log_level = log_get_level();
+	// if(log_level > 4) {
+	// 	log_level = 4;
+	// }
+	// mbedtls_debug_set_threshold(log_level);
 #else
 	// mbedtls_debug_set_threshold(3);
 #endif
