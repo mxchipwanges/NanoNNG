@@ -67,7 +67,7 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
 #ifdef CONFIG_MXCHIP_DEBUG
-	log_log(level, __FILE__, __LINE__, __FUNCTION__, "%s", buf);
+	log_log(level, "mbdtls/tls.c", __LINE__, __FUNCTION__, "%s", buf);
 #else
 	nni_plat_println(buf);
 #endif
