@@ -15,9 +15,6 @@
 #include "nng/supplemental/nanolib/log.h"
 #include "nng/supplemental/nanolib/hocon.h"
 #include "nanolib.h"
-#ifdef CONFIG_MXCHIP
-#include "include/version.h"
-#endif
 #include <ctype.h>
 
 static void conf_bridge_parse(conf *nanomq_conf, const char *path);
@@ -1258,10 +1255,6 @@ print_rule_engine_conf(conf_rule *rule_eng)
 void
 print_conf(conf *nanomq_conf)
 {
-#ifdef CONFIG_MXCHIP
-	log_info("\n%s v%d.%d.%d-%s mxchip@%s,%s\n", "NanoMQ", NANO_VER_MAJOR,
-	    NANO_VER_MINOR, NANO_VER_PATCH, NANO_VER_ID_SHORT, __TIME__, __DATE__);
-#endif
 	log_info("This NanoMQ instance configured as:");
 
 	if (nanomq_conf->enable) {
