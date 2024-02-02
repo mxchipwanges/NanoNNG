@@ -29,6 +29,7 @@
 
 #include "core/nng_impl.h"
 #include <nng/supplemental/tls/engine.h>
+#include "nng/supplemental/nanolib/log.h"
 
 // pair holds a private key and the associated certificate.
 typedef struct {
@@ -65,7 +66,11 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	NNI_ARG_UNUSED(ctx);
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
+#ifdef CONFIG_MXCHIP_DEBUG
+	log_log(level, __FILE__, __LINE__, __FUNCTION__, "%s", buf);
+#else
 	nni_plat_println(buf);
+#endif
 }
 
 static int
@@ -637,7 +642,8 @@ nng_tls_engine_init_mbed(void)
 	// This may be useful when trying to debug failures.
 #ifdef CONFIG_MXCHIP_DEBUG
 	mbedtls_debug_set_threshold(4);
-	// log_level = log_get_level();
+	log_level = log_get_level();
+	log_debug("\r\n****** log level %d ******\r\n", log_level);
 	// if(log_level > 4) {
 	// 	log_level = 4;
 	// }
