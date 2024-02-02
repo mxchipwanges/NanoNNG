@@ -643,11 +643,11 @@ nng_tls_engine_init_mbed(void)
 #ifdef CONFIG_MXCHIP_DEBUG
 	// mbedtls_debug_set_threshold(4);
 	log_level = log_get_level();
-	log_debug("****** log level %d ******", log_level);
+	log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "****** log level %d ******", log_level);
 	if(log_level > 4) {
 		log_level = 4;
 	}
-	f(log_level < 0) {
+	if(log_level < 0) {
 		log_level = 0;
 	}
 	mbedtls_debug_set_threshold(log_level);
