@@ -625,7 +625,7 @@ nng_tls_engine_init_mbed(void)
 {
 	int rv;
 #ifdef CONFIG_MXCHIP_DEBUG
-	int log_level;
+	// int log_level;
 #endif
 
 #ifdef NNG_TLS_USE_CTR_DRBG
@@ -641,16 +641,17 @@ nng_tls_engine_init_mbed(void)
 	// Uncomment the following to have noisy debug from mbedTLS.
 	// This may be useful when trying to debug failures.
 #ifdef CONFIG_MXCHIP_DEBUG
-	// mbedtls_debug_set_threshold(4);
-	log_level = log_get_level();
-	log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "****** log level %d ******", log_level);
-	if(log_level > 4) {
-		log_level = 4;
-	}
-	if(log_level < 0) {
-		log_level = 0;
-	}
-	mbedtls_debug_set_threshold(log_level);
+	//TODO MXCHIP log level
+	// log_level = log_get_level();
+	// log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "****** log level %d ******", log_level);
+	// if(log_level > 4) {
+	// 	log_level = 4;
+	// }
+	// if(log_level < 0) {
+	// 	log_level = 0;
+	// }
+	// mbedtls_debug_set_threshold(log_level);
+	mbedtls_debug_set_threshold(4);
 #else
 	// mbedtls_debug_set_threshold(3);
 #endif
