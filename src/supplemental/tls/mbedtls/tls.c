@@ -625,7 +625,7 @@ nng_tls_engine_init_mbed(void)
 {
 	int rv;
 #ifdef CONFIG_MXCHIP_DEBUG
-	// int log_level;
+	int log_level;
 #endif
 
 #ifdef NNG_TLS_USE_CTR_DRBG
