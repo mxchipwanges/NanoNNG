@@ -642,14 +642,14 @@ nng_tls_engine_init_mbed(void)
 	// This may be useful when trying to debug failures.
 #ifdef CONFIG_MXCHIP_DEBUG
 	//TODO MXCHIP log level
-	// log_level = log_get_level();
-	// log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "****** log level %d ******", log_level);
-	// if(log_level > 4) {
-	// 	log_level = 4;
-	// }
-	// if(log_level < 0) {
-	// 	log_level = 0;
-	// }
+	log_level = log_get_level();
+	log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "******nanomq_log_level:%ld******", log_level);
+	if(log_level > 4) {
+		log_level = 4;
+	}
+	if(log_level < 0) {
+		log_level = 0;
+	}
 	// mbedtls_debug_set_threshold(log_level);
 	mbedtls_debug_set_threshold(4);
 #else
