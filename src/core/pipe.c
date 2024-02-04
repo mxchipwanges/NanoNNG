@@ -512,6 +512,7 @@ nni_pipe_set_pid(nni_pipe *new_pipe, uint32_t id)
 		rv = nni_id_set(&pipes, id, new_pipe);
 		nni_mtx_unlock(&pipes_lk);
 		if (!p->cache || rv != 0) {
+			log_warn("********** duplicated client id(%d) close!", id);
 			nni_pipe_close(p);
 		}
 		return rv;
