@@ -699,20 +699,18 @@ session_keeping:
 			// set event of old pipe to false and discard it.
 			old->event       = false;
 			old->pipe->cache = false;
-#ifdef CONFIG_MXCHIP
-			old->reason_code = NNG_ECONNRESET; // add by MXCHIP@20240125 for AO
-#endif
 			nni_id_remove(&s->cached_sessions, p->pipe->p_id);
 		}
 	} else {
 		// clean previous session
 		old = nni_id_get(&s->cached_sessions, p->pipe->p_id);
 		if (old != NULL) {
-			old->event       = true;
-			old->pipe->cache = false;
 #ifdef CONFIG_MXCHIP
-			old->reason_code = NNG_ECONNRESET; // add by MXCHIP@20240125 for AO
+			old->event       = false;
+#else
+			old->event       = true;
 #endif
+			old->pipe->cache = false;
 #ifdef NNG_SUPP_SQLITE
 			nni_qos_db_remove_by_pipe(
 			    is_sqlite, old->nano_qos_db, old->pipe->p_id);
@@ -842,11 +840,7 @@ nano_pipe_close(void *arg)
 			nni_mtx_lock(&p->lk);
 			// set event to false avoid of sending the
 			// disconnecting msg
-#ifdef CONFIG_MXCHIP
-			p->event                   = true; // modify by MXCHIP@20240125 for AO: need disconnect event when connection disconnected
-#else
 			p->event                   = false;
-#endif
 			npipe->cache               = true;
 			// set clean start to 1, prevent caching session twice
 			p->conn_param->clean_start = 1;
@@ -886,8 +880,11 @@ nano_pipe_close(void *arg)
 	// create disconnect event msg
 #ifdef CONFIG_MXCHIP
 send_disconnect_msg:
-	log_debug("********* notify disconnect: p->event %d, p->reason_code %d **********\r\n", p->event, p->reason_code);
-	if (p->event && (p->reason_code != NNG_ECONNRESET)) { // modify by MXCHIP@20240125 for AO: no disconnect event when client reconnected
+	log_debug("********* disconnect: p->event %d, p->reason_code %d **********\r\n", p->event, p->reason_code);
+	if (p->event && \
+		((p->reason_code == NMQ_KEEP_ALIVE_TIMEOUT) || \
+		(p->reason_code == NMQ_SERVER_SHUTTING_DOWN)) ) { // modify by MXCHIP@20240125 for AO: no disconnect event when client reconnected
+		log_debug("********* notify disconnect: p->reason_code %d **********\r\n", p->reason_code);
 #else
 	if (p->event) {
 #endif
