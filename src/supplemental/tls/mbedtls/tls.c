@@ -643,15 +643,15 @@ nng_tls_engine_init_mbed(void)
 #ifdef CONFIG_MXCHIP_DEBUG
 	//TODO MXCHIP log level
 	log_level = log_get_level();
-	log_log(NNG_LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "******nanomq_log_level:%ld******", log_level);
+	printf("\r\n****** nanomq_log_level:%ld ******\r\n", log_level);
 	if(log_level > 4) {
 		log_level = 4;
 	}
 	if(log_level < 0) {
 		log_level = 0;
 	}
-	// mbedtls_debug_set_threshold(log_level);
-	mbedtls_debug_set_threshold(4);
+	mbedtls_debug_set_threshold(log_level);
+	// mbedtls_debug_set_threshold(4);
 #else
 	// mbedtls_debug_set_threshold(3);
 #endif
