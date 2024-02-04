@@ -882,7 +882,8 @@ nano_pipe_close(void *arg)
 send_disconnect_msg:
 	log_debug("********* disconnect: p->event %d, p->reason_code %d **********\r\n", p->event, p->reason_code);
 	if (p->event && \
-		((p->reason_code == NMQ_KEEP_ALIVE_TIMEOUT) || \
+		((p->reason_code == 0x00) || \
+		(p->reason_code == NMQ_KEEP_ALIVE_TIMEOUT) || \
 		(p->reason_code == NMQ_SERVER_SHUTTING_DOWN)) ) { // modify by MXCHIP@20240125 for AO: no disconnect event when client reconnected
 		log_debug("********* notify disconnect: p->reason_code %d **********\r\n", p->reason_code);
 #else
