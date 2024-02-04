@@ -650,8 +650,8 @@ nng_tls_engine_init_mbed(void)
 	if(log_level < 0) {
 		log_level = 0;
 	}
-	mbedtls_debug_set_threshold(log_level);
-	// mbedtls_debug_set_threshold(4);
+	// mbedtls_debug_set_threshold(log_level);
+	mbedtls_debug_set_threshold(4);
 #else
 	// mbedtls_debug_set_threshold(3);
 #endif
