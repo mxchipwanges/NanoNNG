@@ -172,6 +172,14 @@ log_set_level(int level)
 	L.level = level;
 }
 
+#ifdef CONFIG_MXCHIP_DEBUG
+int
+log_get_level(void)
+{
+	return L.level;
+}
+#endif
+
 int
 log_add_callback(
     log_func fn, void *udata, int level, void *mtx, conf_log *config)

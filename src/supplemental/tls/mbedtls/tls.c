@@ -65,7 +65,11 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	NNI_ARG_UNUSED(ctx);
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
+#ifdef CONFIG_MXCHIP_DEBUG
+	log_log(level, "tls.c", __LINE__, __FUNCTION__, "%s", buf);
+#else
 	nni_plat_println(buf);
+#endif
 }
 
 static int
@@ -622,6 +626,9 @@ int
 nng_tls_engine_init_mbed(void)
 {
 	int rv;
+#ifdef CONFIG_MXCHIP_DEBUG
+	int log_level;
+#endif
 
 #ifdef NNG_TLS_USE_CTR_DRBG
 	nni_mtx_init(&rng_lock);
@@ -633,10 +640,21 @@ nng_tls_engine_init_mbed(void)
 		return (rv);
 	}
 #endif
+#ifdef CONFIG_MXCHIP_DEBUG
+	log_level = log_get_level();
+	if(log_level < 0) {
+		log_level = 0;
+	}
+	if(log_level > 4) {
+		log_level = 4;
+	}
+	log_debug("*** mxchip set mbedtls log level: %d (from nanomq).", log_level);
+	mbedtls_debug_set_threshold(log_level);
+#else
 	// Uncomment the following to have noisy debug from mbedTLS.
 	// This may be useful when trying to debug failures.
 	// mbedtls_debug_set_threshold(3);
-
+#endif
 	rv = nng_tls_engine_register(&tls_engine_mbed);
 
 #ifdef NNG_TLS_USE_CTR_DRBG
