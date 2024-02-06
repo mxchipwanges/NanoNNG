@@ -84,6 +84,7 @@ set_log_level(conf_log *log)
 		int rv = log_level_num(level);
 		if (-1 != rv) {
 			log->level = rv;
+			printf("\nset_log_level %d\n", rv);
 		}
 	}
 	nng_strfree(level);

@@ -649,6 +649,7 @@ nng_tls_engine_init_mbed(void)
 		log_level = 4;
 	}
 	log_debug("*** mxchip set mbedtls log level: %d (from nanomq).", log_level);
+	printf("\n*** mxchip set mbedtls log level: %d (from nanomq).\n", log_level);
 	mbedtls_debug_set_threshold(log_level);
 #else
 	// Uncomment the following to have noisy debug from mbedTLS.
