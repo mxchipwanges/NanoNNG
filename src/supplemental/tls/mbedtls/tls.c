@@ -61,11 +61,15 @@ struct nng_tls_engine_config {
 static void
 tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 {
-	char buf[128];
+	char buf[256];
 	NNI_ARG_UNUSED(ctx);
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
-	nni_plat_println(buf);
+#ifdef CONFIG_MXCHIP_DEBUG
+	log_log(level, "tls.c", __LINE__, __FUNCTION__, "%s", buf);
+#else
+ 	nni_plat_println(buf);
+#endif
 }
 
 static int
