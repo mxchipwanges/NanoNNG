@@ -237,7 +237,7 @@ nano_pipe_timer_cb(void *arg)
 		return;
 	}
 	qos_backoff = p->ka_refresh * (qos_duration) *1000 -
-	    p->keepalive * qos_backoff * 1000;
+	    p->keepalive * qos_backoff;
 	if (qos_backoff > 0) {
 		nni_println(
 		    "Warning: close pipe & kick client due to KeepAlive "
