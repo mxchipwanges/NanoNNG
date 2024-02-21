@@ -844,6 +844,7 @@ nano_pipe_close(void *arg)
 		// set event to true for sending the disconnecting msg, by mxchip
 		p->event                   = true;
 		npipe->cache               = true;
+		p->conn_param->clean_start = 1;
 		nni_atomic_swap_bool(&npipe->p_closed, false);
 		if (nni_list_active(&s->recvpipes, p)) {
 			nni_list_remove(&s->recvpipes, p);
