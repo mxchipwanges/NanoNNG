@@ -812,6 +812,9 @@ nano_pipe_close(void *arg)
 	nni_msg   *msg;
 	nni_pipe  *npipe        = p->pipe;
 	char      *clientid     = NULL;
+#ifdef CONFIG_MXCHIP
+	int ret = 0; // 0: close success, -1: not close
+#endif
 
 	log_trace(" ############## nano_pipe_close ############## ");
 	if (npipe->cache == true) {
@@ -835,7 +838,11 @@ nano_pipe_close(void *arg)
 			nni_mtx_lock(&p->lk);
 			// set event to false avoid of sending the
 			// disconnecting msg
+#ifdef CONFIG_MXCHIP
+			p->event                   = true; // force enable disconnect msg, by mxchip@20240222
+#else
 			p->event                   = false;
+#endif
 			npipe->cache               = true;
 			// set clean start to 1, prevent caching session twice
 			p->conn_param->clean_start = 1;
@@ -844,9 +851,15 @@ nano_pipe_close(void *arg)
 				nni_list_remove(&s->recvpipes, p);
 			}
 			nano_nni_lmq_flush(&p->rlmq, false);
+#ifdef CONFIG_MXCHIP
+			nni_mtx_unlock(&p->lk);
+			ret = -1;
+			goto send_disconnect_msg;
+#else
 			nni_mtx_unlock(&s->lk);
 			nni_mtx_unlock(&p->lk);
 			return -1;
+#endif
 		}
 		// have to stop aio timer first, otherwise we hit null qos_db
 		nni_aio_stop(&p->aio_timer);
@@ -866,12 +879,19 @@ nano_pipe_close(void *arg)
 	// TODO send disconnect msg to client if needed.
 	// depends on MQTT V5 reason code
 	// create disconnect event msg
+#ifdef CONFIG_MXCHIP
+send_disconnect_msg:
+#endif
 	if (p->event) {
 		msg =
 		    nano_msg_notify_disconnect(p->conn_param, p->reason_code);
 		if (msg == NULL) {
 			nni_mtx_unlock(&s->lk);
+#ifdef CONFIG_MXCHIP
+			return ret;
+#else
 			return 0;
+#endif
 		}
 		nni_msg_set_conn_param(msg, p->conn_param);
 		// clone for notification pub
@@ -887,7 +907,11 @@ nano_pipe_close(void *arg)
 			nni_mtx_unlock(&s->lk);
 			nni_aio_set_msg(aio, msg);
 			nni_aio_finish(aio, 0, nni_msg_len(msg));
+#ifdef CONFIG_MXCHIP
+			return ret;
+#else
 			return 0;
+#endif
 		} else {
 			// no enough ctx, so cache to waitlmq
 			// free conn param when discard waitlmq
@@ -903,7 +927,11 @@ nano_pipe_close(void *arg)
 		}
 	}
 	nni_mtx_unlock(&s->lk);
-	return 0;
+#ifdef CONFIG_MXCHIP
+			return ret;
+#else
+			return 0;
+#endif
 }
 
 static void
