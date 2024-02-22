@@ -66,6 +66,26 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
 #ifdef CONFIG_MXCHIP_DEBUG
+	switch(level) {
+		case 0: // No debug
+			level = NNG_LOG_FATAL;
+			break;
+		case 1: // Error
+			level = NNG_LOG_ERROR;
+			break;
+		case 2: // State change
+			level = NNG_LOG_INFO
+			break;
+		case 3: // Informational
+			level = NNG_LOG_DEBUG
+			break;
+		case 4: // Verbose
+			level = NNG_LOG_TRACE;
+			break;
+		default:
+			level = NNG_LOG_FATAL;
+			break;
+	}
 	log_log(level, "tls.c", __LINE__, __FUNCTION__, "%s", buf);
 #else
  	nni_plat_println(buf);
@@ -641,8 +661,26 @@ nng_tls_engine_init_mbed(void)
 	// This may be useful when trying to debug failures.
 #ifdef CONFIG_MXCHIP_DEBUG
 	log_level = log_get_level();
-	if(log_level > 4) {
-		log_level = 4;
+	switch(log_level){
+		case NNG_LOG_FATAL:
+			log_level = 0; // no log
+			break;
+		case NNG_LOG_ERROR:
+		case NNG_LOG_WARN:
+			log_level = 1; // error log
+			break;
+		case NNG_LOG_INFO:
+			log_level = 2; // State change
+			break;
+		case NNG_LOG_DEBUG:
+			log_level = 3; // Informational
+			break;
+		case NNG_LOG_TRACE:
+			log_level = 4; // Verbose
+			break;
+		default:
+			log_level = 0; // no log
+			break;
 	}
 	mbedtls_debug_set_threshold(log_level);
 #else
