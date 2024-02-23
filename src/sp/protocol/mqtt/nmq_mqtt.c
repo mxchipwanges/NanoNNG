@@ -881,6 +881,7 @@ nano_pipe_close(void *arg)
 	// create disconnect event msg
 #ifdef CONFIG_MXCHIP
 send_disconnect_msg:
+	log_debug("-----> nano_msg_notify_disconnect(%s).", p->event ? "yes" : "no");
 #endif
 	if (p->event) {
 		msg =

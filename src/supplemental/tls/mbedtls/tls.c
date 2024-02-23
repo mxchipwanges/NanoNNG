@@ -58,14 +58,94 @@ struct nng_tls_engine_config {
 	nni_list           pairs;
 };
 
+#ifdef CONFIG_MXCHIP_DEBUG
+static int 
+nanomq_log_level_to_mbedtls(int log_level)
+{
+	int mbedtls_log_level;
+
+	switch(log_level) {
+		case NNG_LOG_FATAL:
+			mbedtls_log_level = 0; // No debug
+		case NNG_LOG_ERROR:
+		case NNG_LOG_WARN:
+			mbedtls_log_level = 1; // Error
+		break;
+		case NNG_LOG_INFO:
+			mbedtls_log_level = 2; // State change
+		break;
+		case NNG_LOG_DEBUG:
+			mbedtls_log_level = 3; // Informational
+		break;
+		case NNG_LOG_TRACE:
+			mbedtls_log_level = 4; // Verbose
+		break;
+		default:
+			mbedtls_log_level = 0; // No debug
+		break;
+	}
+
+	// log_info("nanomq log level(%d -> %d)mbedtls log.", log_level, mbedtls_log_level);
+	return mbedtls_log_level;
+}
+
+static int 
+mbedtls_log_level_to_nanomq(int log_level)
+{
+	int nanomq_log_level;
+
+	/* mbedtls log level to nanomq log level */
+	switch(log_level) {
+		case 0: // note: no log, // should not happen
+			nanomq_log_level = NNG_LOG_FATAL;
+		break;
+		case 1: // Error
+			nanomq_log_level = NNG_LOG_ERROR;
+		break;
+		case 2: // State change
+			nanomq_log_level = NNG_LOG_INFO;
+		break;
+		case 3: // Informational
+			nanomq_log_level = NNG_LOG_DEBUG;
+		break;
+		case 4: // Verbose
+			nanomq_log_level = NNG_LOG_TRACE;
+		break;
+		default:
+			nanomq_log_level = NNG_LOG_WARN; // should not happen
+		break;
+	}
+
+	/* mbedtls log output to nanomq log */
+	// log_info("**** mbedtls log(%d -> %d)nanomq log", log_level, nanomq_log_level);
+	return nanomq_log_level;
+}
+
+void mbedtls_log_level_update(int log_level)
+{
+	mbedtls_debug_set_threshold(nanomq_log_level_to_mbedtls(log_level));
+	return;
+}
+#endif
+
 static void
 tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 {
+#ifdef CONFIG_MXCHIP_DEBUG
+	char buf[256];
+#else
 	char buf[128];
+#endif
 	NNI_ARG_UNUSED(ctx);
 	NNI_ARG_UNUSED(level);
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
+	// log_debug("****[mbedtls log(%d)] %s", level, buf);
+
+#ifdef CONFIG_MXCHIP_DEBUG
+	log_log(mbedtls_log_level_to_nanomq(level), "tls.c", __LINE__, __FUNCTION__, "%s", buf);
+#else
 	nni_plat_println(buf);
+#endif
 }
 
 static int
@@ -633,9 +713,16 @@ nng_tls_engine_init_mbed(void)
 		return (rv);
 	}
 #endif
+
+#ifdef CONFIG_MXCHIP_DEBUG
+	// mbedtls log level read from nanomq conf
+	mbedtls_debug_set_threshold(nanomq_log_level_to_mbedtls(log_get_level()));
+
+#else
 	// Uncomment the following to have noisy debug from mbedTLS.
 	// This may be useful when trying to debug failures.
 	// mbedtls_debug_set_threshold(3);
+#endif
 
 	rv = nng_tls_engine_register(&tls_engine_mbed);
 

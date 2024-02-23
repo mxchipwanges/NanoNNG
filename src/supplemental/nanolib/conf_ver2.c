@@ -494,6 +494,7 @@ conf_log_parse_ver2(conf *config, cJSON *jso)
 		int    rv = log_level_num(cJSON_GetStringValue(jso_log_level));
 		if (-1 != rv) {
 			log->level = rv;
+			printf("*** conf log level %d\n", log->level);
 		} else {
 			log->level = NNG_LOG_ERROR;
 		}
