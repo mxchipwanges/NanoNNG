@@ -63,7 +63,7 @@ enum {
 NNG_DECL const char *log_level_string(int level);
 NNG_DECL int         log_level_num(const char *level);
 NNG_DECL void        log_set_level(int level);
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 NNG_DECL int         log_get_level(void);
 #endif
 NNG_DECL int         log_add_callback(

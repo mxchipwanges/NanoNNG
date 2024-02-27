@@ -58,7 +58,7 @@ struct nng_tls_engine_config {
 	nni_list           pairs;
 };
 
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 static int 
 nanomq_log_level_to_mbedtls(int log_level)
 {
@@ -85,7 +85,7 @@ nanomq_log_level_to_mbedtls(int log_level)
 		break;
 	}
 
-	// log_info("nanomq log level(%d -> %d)mbedtls log.", log_level, mbedtls_log_level);
+	log_info("nanomq log level(%d -> %d)mbedtls log.", log_level, mbedtls_log_level);
 	return mbedtls_log_level;
 }
 
@@ -131,7 +131,7 @@ void mbedtls_log_level_update(int log_level)
 static void
 tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 {
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 	char buf[256];
 #else
 	char buf[128];
@@ -141,7 +141,7 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	snprintf(buf, sizeof(buf), "%s:%04d: %s", file, line, s);
 	// log_debug("****[mbedtls log(%d)] %s", level, buf);
 
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 	log_log(mbedtls_log_level_to_nanomq(level), "tls.c", __LINE__, __FUNCTION__, "%s", buf);
 #else
 	nni_plat_println(buf);
@@ -714,7 +714,7 @@ nng_tls_engine_init_mbed(void)
 	}
 #endif
 
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 	// mbedtls log level read from nanomq conf
 	mbedtls_debug_set_threshold(nanomq_log_level_to_mbedtls(log_get_level()));
 

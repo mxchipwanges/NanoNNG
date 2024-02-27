@@ -172,7 +172,7 @@ log_set_level(int level)
 	L.level = level;
 }
 
-#ifdef CONFIG_MXCHIP_DEBUG
+#ifdef CONFIG_MXCHIP_DEBUG_TLS
 int
 log_get_level(void)
 {
