@@ -134,7 +134,9 @@ tls_conn_cb(void *arg)
 	nng_stream *tcp;
 	int         rv;
 
+	log_debug("*** tls_conn_cb ***");
 	if ((rv = nni_aio_result(&conn->conn_aio)) != 0) {
+		log_debug("*** tls_conn_cb: nni_aio_result err %d ! nng_stream_free %p", rv, &conn->stream);
 		nni_aio_finish_error(conn->user_aio, rv);
 		nng_stream_free(&conn->stream);
 		return;
@@ -143,6 +145,7 @@ tls_conn_cb(void *arg)
 	tcp = nni_aio_get_output(&conn->conn_aio, 0);
 
 	if ((rv = tls_start(conn, tcp)) != 0) {
+		log_debug("*** tls_conn_cb: tls_start err %d ! nng_stream_free %p", rv, &conn->stream);
 		nni_aio_finish_error(conn->user_aio, rv);
 		nng_stream_free(&conn->stream);
 		return;
@@ -668,6 +671,7 @@ static void
 tls_cancel(nni_aio *aio, void *arg, int rv)
 {
 	tls_conn *conn = arg;
+	log_debug("*** tls_cancel: conn %p, rv %d", conn, rv);
 	nni_mtx_lock(&conn->lock);
 	if (aio == nni_list_first(&conn->recv_queue)) {
 		nni_aio_abort(&conn->tcp_recv, rv);
@@ -741,6 +745,7 @@ tls_close(void *arg)
 	conn->ops.close((void *) (conn + 1));
 	tls_tcp_error(conn, NNG_ECLOSED);
 	nni_mtx_unlock(&conn->lock);
+	log_debug("*** tls_close: conn %p, nng_stream_close tcp %p", conn, conn->tcp);
 	nng_stream_close(conn->tcp);
 }
 
@@ -889,7 +894,9 @@ tls_reap(void *arg)
 	tls_conn *conn = arg;
 
 	// Shut it all down first.  We should be freed.
+	log_debug("*** tls_reap: conn %p, conn->tcp %p", conn, conn->tcp);
 	if (conn->tcp != NULL) {
+		log_debug("*** tls_reap: nng_stream_close %p", conn->tcp);
 		nng_stream_close(conn->tcp);
 	}
 	nni_aio_stop(&conn->conn_aio);
@@ -918,6 +925,7 @@ tls_free(void *arg)
 {
 	tls_conn *conn = arg;
 
+	log_debug("*** tls_free: conn %p, tcp %p", conn, conn->tcp);
 	nni_reap(&tls_conn_reap_list, conn);
 }
 
@@ -929,6 +937,7 @@ tls_start(tls_conn *conn, nng_stream *tcp)
 	conn->tcp = tcp;
 	rv        = conn->ops.init(
             (void *) (conn + 1), conn, (void *) (conn->cfg + 1));
+	log_debug("*** tls_start: conn %p, tcp %p, rv %d", conn, conn->tcp, rv);
 	return (rv);
 }
 
@@ -937,6 +946,7 @@ tls_tcp_error(tls_conn *conn, int rv)
 {
 	// An error here is fatal.  Shut it all down.
 	nni_aio *aio;
+	log_debug("*** tls_tcp_error: nng_stream_close conn %p, tcp %p", conn, conn->tcp);
 	nng_stream_close(conn->tcp);
 	nni_aio_close(&conn->tcp_send);
 	nni_aio_close(&conn->tcp_recv);
