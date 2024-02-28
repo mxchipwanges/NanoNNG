@@ -138,6 +138,7 @@ tls_conn_cb(void *arg)
 	if ((rv = nni_aio_result(&conn->conn_aio)) != 0) {
 		log_debug("*** tls_conn_cb: nni_aio_result err %d ! nng_stream_free %p", rv, &conn->stream);
 		nni_aio_finish_error(conn->user_aio, rv);
+		nng_stream_close(&conn->stream);
 		nng_stream_free(&conn->stream);
 		return;
 	}
@@ -147,6 +148,7 @@ tls_conn_cb(void *arg)
 	if ((rv = tls_start(conn, tcp)) != 0) {
 		log_debug("*** tls_conn_cb: tls_start err %d ! nng_stream_free %p", rv, &conn->stream);
 		nni_aio_finish_error(conn->user_aio, rv);
+		nng_stream_close(&conn->stream);
 		nng_stream_free(&conn->stream);
 		return;
 	}
