@@ -695,9 +695,11 @@ session_keeping:
 
 			nni_pipe_id_swap(npipe->p_id, old->pipe->p_id);
 			p->id = nni_pipe_id(npipe);
+#ifndef CONFIG_MXCHIP // enable connect notify wes@240229
 			// set event to false so that no notification will be
 			// sent
 			p->event = false;
+#endif
 			// set event of old pipe to false and discard it.
 			old->event       = false;
 			old->pipe->cache = false;
@@ -707,7 +709,11 @@ session_keeping:
 		// clean previous session
 		old = nni_id_get(&s->cached_sessions, p->pipe->p_id);
 		if (old != NULL) {
+#ifdef CONFIG_MXCHIP
+			old->event       = false; // not notify if reconnected wes@240229
+#else
 			old->event       = true;
+#endif
 			old->pipe->cache = false;
 #ifdef NNG_SUPP_SQLITE
 			nni_qos_db_remove_by_pipe(
@@ -838,9 +844,7 @@ nano_pipe_close(void *arg)
 			nni_mtx_lock(&p->lk);
 			// set event to false avoid of sending the
 			// disconnecting msg
-#ifdef CONFIG_MXCHIP
-			p->event                   = true; // force enable disconnect msg, by mxchip@20240222
-#else
+#ifndef CONFIG_MXCHIP	// not disable disconnect notify wes@240229
 			p->event                   = false;
 #endif
 			npipe->cache               = true;
@@ -881,7 +885,7 @@ nano_pipe_close(void *arg)
 	// create disconnect event msg
 #ifdef CONFIG_MXCHIP
 send_disconnect_msg:
-	log_debug("-----> nano_msg_notify_disconnect(%s).", p->event ? "yes" : "no");
+	log_debug("---> nano_msg_notify_disconnect event %d, reason_code %d.", p->event, p->reason_code);
 #endif
 	if (p->event) {
 		msg =
