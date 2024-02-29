@@ -339,7 +339,9 @@ conn_handshake(nng_tls_engine_conn *ec)
 {
 	int rv;
 
+	nni_mtx_lock(&ssl_conn_lock);
 	rv = mbedtls_ssl_handshake(&ec->ctx);
+	nni_mtx_unlock(&ssl_conn_lock);
 	switch (rv) {
 	case MBEDTLS_ERR_SSL_WANT_WRITE:
 	case MBEDTLS_ERR_SSL_WANT_READ:
