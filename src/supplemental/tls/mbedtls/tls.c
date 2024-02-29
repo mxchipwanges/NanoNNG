@@ -43,6 +43,8 @@ static mbedtls_ctr_drbg_context rng_ctx;
 static nni_mtx                  rng_lock;
 #endif
 
+static nni_mtx                  ssl_conn_lock;
+
 struct nng_tls_engine_conn {
 	void               *tls; // parent conn
 	mbedtls_ssl_context ctx;
@@ -267,18 +269,21 @@ conn_init(nng_tls_engine_conn *ec, void *tls, nng_tls_engine_config *cfg)
 {
 	int rv;
 
+	nni_mtx_lock(&ssl_conn_lock);
 	ec->tls = tls;
 
 	mbedtls_ssl_init(&ec->ctx);
 	mbedtls_ssl_set_bio(&ec->ctx, tls, net_send, net_recv, NULL);
 
 	if ((rv = mbedtls_ssl_setup(&ec->ctx, &cfg->cfg_ctx)) != 0) {
+		nni_mtx_unlock(&ssl_conn_lock);
 		return (tls_mk_err(rv));
 	}
 
 	if (cfg->server_name != NULL) {
 		mbedtls_ssl_set_hostname(&ec->ctx, cfg->server_name);
 	}
+	nni_mtx_unlock(&ssl_conn_lock);
 
 	return (0);
 }
@@ -713,6 +718,7 @@ nng_tls_engine_init_mbed(void)
 		return (rv);
 	}
 #endif
+	nni_mtx_init(&ssl_conn_lock);
 
 #ifdef CONFIG_MXCHIP_DEBUG_TLS
 	// mbedtls log level read from nanomq conf
@@ -725,12 +731,12 @@ nng_tls_engine_init_mbed(void)
 #endif
 
 	rv = nng_tls_engine_register(&tls_engine_mbed);
-
-#ifdef NNG_TLS_USE_CTR_DRBG
 	if (rv != 0) {
+#ifdef NNG_TLS_USE_CTR_DRBG
 		nni_mtx_fini(&rng_lock);
-	}
 #endif
+		nni_mtx_fini(&ssl_conn_lock);
+	}
 
 	return (rv);
 }
@@ -742,4 +748,5 @@ nng_tls_engine_fini_mbed(void)
 	mbedtls_ctr_drbg_free(&rng_ctx);
 	nni_mtx_fini(&rng_lock);
 #endif
+	nni_mtx_fini(&ssl_conn_lock);
 }
