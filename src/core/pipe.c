@@ -491,6 +491,10 @@ nni_pipe_id_swap(uint32_t old_id, uint32_t new_id)
 	}
 }
 
+#ifdef CONFIG_MXCHIP
+extern void nano_pipe_event_disable(void *p_nano_pipe, bool flag);
+#endif
+
 /**
  * replace pid with input uint32 value
  * return 0     : successed
@@ -502,6 +506,7 @@ nni_pipe_set_pid(nni_pipe *new_pipe, uint32_t id)
 {
 	int rv;
 	nni_pipe *p;
+
 	// remove the id set by NNG
 	nni_mtx_lock(&pipes_lk);
 	nni_id_remove(&pipes, new_pipe->p_id);
@@ -512,6 +517,10 @@ nni_pipe_set_pid(nni_pipe *new_pipe, uint32_t id)
 		rv = nni_id_set(&pipes, id, new_pipe);
 		nni_mtx_unlock(&pipes_lk);
 		if (!p->cache || rv != 0) {
+#ifdef CONFIG_MXCHIP
+			log_warn("*** kick old client %p hash %d", p, id);
+			nano_pipe_event_disable(p->p_proto_data, true); // disable disconnect event if reconnect wes@240301
+#endif
 			nni_pipe_close(p);
 		}
 		return rv;

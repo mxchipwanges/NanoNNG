@@ -593,6 +593,18 @@ nano_pipe_fini(void *arg)
 	nano_nni_lmq_fini(&p->rlmq);
 }
 
+#ifdef CONFIG_MXCHIP
+void nano_pipe_event_disable(void *p_nano_pipe, bool flag)
+{
+	nano_pipe *p    = p_nano_pipe;
+
+	log_debug("*** nano_pipe_event_disable(%d), nni_pipe %p", flag, p->pipe);
+	if(p != NULL){
+		p->event = !flag;
+	}
+}
+#endif
+
 static int
 nano_pipe_init(void *arg, nni_pipe *pipe, void *s)
 {
