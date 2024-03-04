@@ -246,7 +246,6 @@ static struct {
 void
 nng_stream_close(nng_stream *s)
 {
-	log_debug("do nng_stream_close %p", s);
 	s->s_close(s);
 }
 
