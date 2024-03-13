@@ -125,7 +125,11 @@ mbedtls_log_level_to_nanomq(int log_level)
 
 void mbedtls_log_level_update(int log_level)
 {
+#ifdef CONFIG_MXCHIP_FORCE_DEBUG_LOG
+	mbedtls_debug_set_threshold(4);
+#else
 	mbedtls_debug_set_threshold(nanomq_log_level_to_mbedtls(log_level));
+#endif
 	return;
 }
 #endif
@@ -723,8 +727,12 @@ nng_tls_engine_init_mbed(void)
 	nni_mtx_init(&ssl_conn_lock);
 
 #ifdef CONFIG_MXCHIP_DEBUG_TLS
+#ifdef CONFIG_MXCHIP_FORCE_DEBUG_LOG
+	mbedtls_debug_set_threshold(4); // enable all log
+#else
 	// mbedtls log level read from nanomq conf
 	mbedtls_debug_set_threshold(nanomq_log_level_to_mbedtls(log_get_level()));
+#endif
 
 #else
 	// Uncomment the following to have noisy debug from mbedTLS.
