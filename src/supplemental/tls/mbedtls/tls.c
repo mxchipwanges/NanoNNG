@@ -139,6 +139,7 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 {
 #ifdef CONFIG_MXCHIP_DEBUG_TLS
 	char buf[256];
+	int log_len;
 #else
 	char buf[128];
 #endif
@@ -148,6 +149,14 @@ tls_dbg(void *ctx, int level, const char *file, int line, const char *s)
 	// log_debug("****[mbedtls log(%d)] %s", level, buf);
 
 #ifdef CONFIG_MXCHIP_DEBUG_TLS
+	/* remove the '\n' at the end of the mbedtls log string, because it will be added by log_log api. */
+	log_len = strlen(buf);
+	if(log_len < sizeof(buf)) {
+		buf[log_len - 1] = '\0';
+	}
+	else {
+		buf[sizeof(buf) - 1] = '\0'; // in case of overflow
+	}
 	log_log(mbedtls_log_level_to_nanomq(level), "tls.c", __LINE__, __FUNCTION__, "%s", buf);
 #else
 	nni_plat_println(buf);
