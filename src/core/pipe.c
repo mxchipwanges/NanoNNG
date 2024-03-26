@@ -518,7 +518,7 @@ nni_pipe_set_pid(nni_pipe *new_pipe, uint32_t id)
 		nni_mtx_unlock(&pipes_lk);
 		if (!p->cache || rv != 0) {
 #ifdef CONFIG_MXCHIP
-			log_warn("*** kick old client %p hash %d", p, id);
+			log_warn("*** kick old client pipe(%p) client_id hash(%d)", p, id);
 			nano_pipe_event_disable(p->p_proto_data, true); // disable disconnect event if reconnect wes@240301
 #endif
 			nni_pipe_close(p);

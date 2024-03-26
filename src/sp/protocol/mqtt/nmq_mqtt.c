@@ -646,6 +646,7 @@ nano_pipe_start(void *arg)
 	nni_pipe  *npipe = p->pipe;
 
 	bool is_sqlite = s->conf->sqlite.enable;
+	uint32_t clientid_key;
 
 	log_trace(" ########## nano_pipe_start ########## ");
 
@@ -679,13 +680,18 @@ nano_pipe_start(void *arg)
 		log_warn("IPv6 address is not supported in event msg yet");
 	}
 
-	log_debug("client connected! addr [%s port [%d]\n",
-	    p->conn_param->ip_addr_v4, addr.s_in.sa_port);
+	// log_debug("client connected! addr [%s port [%d]\n",
+	//     p->conn_param->ip_addr_v4, addr.s_in.sa_port);
 
 session_keeping:
 	// Clientid should not be NULL since broker will assign one
 	// TODO use p_id
 	clientid = (char *) conn_param_get_clientid(p->conn_param);
+	clientid_key = DJBHashn(clientid, strlen(clientid));
+	log_debug("client_id(%s, hash %d), username(%s), passwd(%s), clean_start(%d), keepalive(%d) connected! addr [%s port [%d]\n", 
+		clientid, clientid_key, p->conn_param->username.body, p->conn_param->password.body, 
+		p->conn_param->clean_start, p->conn_param->keepalive_mqtt,
+	    p->conn_param->ip_addr_v4, addr.s_in.sa_port);
 	if (!clientid) {
 		log_warn("NULL clientid found when try to restore session.");
 		nni_mtx_unlock(&s->lk);
